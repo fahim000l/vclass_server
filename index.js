@@ -6,11 +6,20 @@ const { Server } = require("socket.io");
 const server = http.createServer(app);
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const frileUploadExpress = require("express-fileupload");
+const fileUpload = require("express-fileupload");
+const path = require("path");
+const fs = require("fs");
+const { v4: uuidv4 } = require("uuid");
+const uuid = uuidv4();
 
 const port = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload());
+
+const assetsFolder = path.join(__dirname, "assets");
 
 const io = new Server(server, {
   cors: {
@@ -40,6 +49,7 @@ async function run() {
 
     const usersCollection = client.db("vclass_db").collection("users");
     const roomsCollection = client.db("vclass_db").collection("rooms");
+    const classCollection = client.db("vclass_db").collection("classes");
 
     app.post("/send-user-to-db", async (req, res) => {
       const user = req.body;
@@ -331,6 +341,57 @@ async function run() {
       const room = await roomsCollection.findOne(query);
       const messages = room?.messages;
       res.send(messages);
+    });
+
+    app.post("/upload-file", (req, res) => {
+      const { uploadingFile } = req.files;
+      try {
+        const fileToArray = uploadingFile?.name.split(".");
+        const fileExtention = fileToArray[fileToArray?.length - 1];
+        const fileName = uuid + "." + fileExtention;
+        uploadingFile.mv(path.join(assetsFolder, fileName));
+        res.status(200).json({ message: "ok", fileName });
+      } catch (err) {
+        res.status(500).json({ message: err.message });
+      }
+    });
+
+    app.get("/get-uploaded-file-content", (req, res) => {
+      const targetedFileName = req.query.fileName;
+
+      const filePath = path.join(assetsFolder, targetedFileName);
+
+      fs.readFile(filePath, "utf8", (err, data) => {
+        if (err) {
+          console.error(`Error reading file ${targetedFileName}:`, err);
+          return;
+        }
+
+        // The "data" variable contains the contents of the file
+        res.contentType("application/pdf");
+        res.send(data);
+      });
+    });
+
+    app.post("/create-class", async (req, res) => {
+      const classInfo = req.body;
+      const confirmation = await classCollection.insertOne(classInfo);
+      res.send(confirmation);
+    });
+
+    app.get("/get-classes", async (req, res) => {
+      const userEmail = req.query.email;
+      const classes = await classCollection.find({}).toArray();
+      const userClasses = classes?.filter((clas) =>
+        clas?.members?.includes(userEmail)
+      );
+      res.send(userClasses);
+    });
+
+    app.get("/get-class", async (req, res) => {
+      const query = { _id: new ObjectId(req.query.classId) };
+      const cls = await classCollection.findOne(query);
+      res.send(cls);
     });
   } finally {
   }
