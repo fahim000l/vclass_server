@@ -50,6 +50,9 @@ async function run() {
     const usersCollection = client.db("vclass_db").collection("users");
     const roomsCollection = client.db("vclass_db").collection("rooms");
     const classCollection = client.db("vclass_db").collection("classes");
+    const assignmentsCollection = client
+      .db("vclass_db")
+      .collection("assignments");
 
     app.post("/send-user-to-db", async (req, res) => {
       const user = req.body;
@@ -392,6 +395,35 @@ async function run() {
       const query = { _id: new ObjectId(req.query.classId) };
       const cls = await classCollection.findOne(query);
       res.send(cls);
+    });
+
+    app.post("/post-assignment", async (req, res) => {
+      const assignmentInfo = req.body;
+      const confirmation = await assignmentsCollection.insertOne(
+        assignmentInfo
+      );
+      res.send(confirmation);
+    });
+
+    app.get("/get-assignment-by-class", async (req, res) => {
+      const query = { classId: req.query.classId };
+      const assignments = await assignmentsCollection
+        .find(query)
+        .sort({ date: -1 })
+        .toArray();
+      res.send(assignments);
+    });
+
+    app.get("/get-assignment-details", async (req, res) => {
+      const query = { _id: new ObjectId(req.query.id) };
+      const assignment = await assignmentsCollection.findOne(query);
+      res.send(assignment);
+    });
+
+    app.delete("/delete-assignment", async (req, res) => {
+      const query = { _id: new ObjectId(req.query.id) };
+      const confirmation = await assignmentsCollection.deleteOne(query);
+      res.send(confirmation);
     });
   } finally {
   }
