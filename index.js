@@ -509,6 +509,12 @@ async function run() {
       const comments = await commentsCollection.find(query).toArray();
       res.send(comments);
     });
+
+    app.get("/get-submissionDetails", async (req, res) => {
+      const query = { _id: new ObjectId(req.query.subId) };
+      const submissionInfo = await submissionsCollection.findOne(query);
+      res.send(submissionInfo);
+    });
   } finally {
   }
 }
