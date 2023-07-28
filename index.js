@@ -54,9 +54,14 @@ async function run() {
       .db("vclass_db")
       .collection("assignments");
 
+    const submissionsCollection = client
+      .db("vclass_db")
+      .collection("submissions");
+    const announcementsCollection = client
+      .db("vclass_db")
+      .collection("announcement");
 
-    const submissionsCollection = client.db('vclass_db').collection('submissions')
-
+    const commentsCollection = client.db("vclass_db").collection("comments");
 
     app.post("/send-user-to-db", async (req, res) => {
       const user = req.body;
@@ -430,46 +435,80 @@ async function run() {
       res.send(confirmation);
     });
 
-    app.get('/get-class-members', async (req, res) => {
+    app.get("/get-class-members", async (req, res) => {
       const query = { _id: new ObjectId(req.query.classId) };
       const cls = await classCollection.findOne(query);
       const members = cls?.members;
-      res.send(members)
-    })
+      res.send(members);
+    });
 
-
-    app.put('/add-class-member', async (req, res) => {
+    app.put("/add-class-member", async (req, res) => {
       const membersInfo = req.body;
       const findClass = { _id: new ObjectId(membersInfo?.classId) };
       const option = { upsert: true };
-      const newArray = membersInfo?.members
+      const newArray = membersInfo?.members;
       const updatedDoc = {
         $push: {
           members: {
-            $each: newArray
-          }
-        }
-      }
+            $each: newArray,
+          },
+        },
+      };
 
-      const confirmation = await classCollection.updateOne(findClass, updatedDoc, option)
-      res.send(confirmation)
+      const confirmation = await classCollection.updateOne(
+        findClass,
+        updatedDoc,
+        option
+      );
+      res.send(confirmation);
+    });
 
-
-    })
-
-
-    app.post('/add-submission', async (req, res) => {
+    app.post("/add-submission", async (req, res) => {
       const submission = req.body;
       const confirmation = await submissionsCollection.insertOne(submission);
-      res.send(confirmation)
-    })
+      res.send(confirmation);
+    });
 
-    app.get('/get-submission-by-asnmnt', async (req, res) => {
+    app.get("/get-submission-by-asnmnt", async (req, res) => {
       const query = { assignmentId: req.query.assignmentId };
       const submissions = await submissionsCollection.find(query).toArray();
-      res.send(submissions)
-    })
+      res.send(submissions);
+    });
 
+    app.post("/post-announcement", async (req, res) => {
+      const announcementInfo = req.body;
+      const confirmation = await announcementsCollection.insertOne(
+        announcementInfo
+      );
+      res.send(confirmation);
+    });
+
+    app.get("/get-ansmnt-by-class", async (req, res) => {
+      const query = { classId: req.query.classId };
+      const announcements = await announcementsCollection
+        .find(query)
+        .sort({ date: -1 })
+        .toArray();
+      res.send(announcements);
+    });
+
+    app.get("/get-ansmnt-details", async (req, res) => {
+      const query = { _id: new ObjectId(req.query.id) };
+      const announcement = await announcementsCollection.findOne(query);
+      res.send(announcement);
+    });
+
+    app.post("/post-comment", async (req, res) => {
+      const commentInfo = req.body;
+      const confirmation = await commentsCollection.insertOne(commentInfo);
+      res.send(confirmation);
+    });
+
+    app.get("/get-comments", async (req, res) => {
+      const query = { postId: req.query.postId };
+      const comments = await commentsCollection.find(query).toArray();
+      res.send(comments);
+    });
   } finally {
   }
 }
