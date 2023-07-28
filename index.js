@@ -54,6 +54,10 @@ async function run() {
       .db("vclass_db")
       .collection("assignments");
 
+
+    const submissionsCollection = client.db('vclass_db').collection('submissions')
+
+
     app.post("/send-user-to-db", async (req, res) => {
       const user = req.body;
       const findingQuery = { email: user?.email };
@@ -425,6 +429,47 @@ async function run() {
       const confirmation = await assignmentsCollection.deleteOne(query);
       res.send(confirmation);
     });
+
+    app.get('/get-class-members', async (req, res) => {
+      const query = { _id: new ObjectId(req.query.classId) };
+      const cls = await classCollection.findOne(query);
+      const members = cls?.members;
+      res.send(members)
+    })
+
+
+    app.put('/add-class-member', async (req, res) => {
+      const membersInfo = req.body;
+      const findClass = { _id: new ObjectId(membersInfo?.classId) };
+      const option = { upsert: true };
+      const newArray = membersInfo?.members
+      const updatedDoc = {
+        $push: {
+          members: {
+            $each: newArray
+          }
+        }
+      }
+
+      const confirmation = await classCollection.updateOne(findClass, updatedDoc, option)
+      res.send(confirmation)
+
+
+    })
+
+
+    app.post('/add-submission', async (req, res) => {
+      const submission = req.body;
+      const confirmation = await submissionsCollection.insertOne(submission);
+      res.send(confirmation)
+    })
+
+    app.get('/get-submission-by-asnmnt', async (req, res) => {
+      const query = { assignmentId: req.query.assignmentId };
+      const submissions = await submissionsCollection.find(query).toArray();
+      res.send(submissions)
+    })
+
   } finally {
   }
 }
