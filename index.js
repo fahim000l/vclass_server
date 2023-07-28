@@ -313,6 +313,33 @@ async function run() {
       res.send(confirmation);
     });
 
+    app.put("/add-room-mate", async (req, res) => {
+      const membersInfo = req.body;
+      const findRoom = { _id: new ObjectId(membersInfo?.roomId) };
+      const option = { upsert: true };
+      const newArray = membersInfo?.members;
+      const updatedDoc = {
+        $push: {
+          members: {
+            $each: newArray,
+          },
+        },
+      };
+
+      const confirmation = await roomsCollection.updateOne(
+        findRoom,
+        updatedDoc,
+        option
+      );
+      res.send(confirmation);
+    });
+
+    app.get("/get-room-by-class", async (req, res) => {
+      const query = { classId: req.query.classId };
+      const room = await roomsCollection.findOne(query);
+      res.send(room);
+    });
+
     app.get("/get-rooms", async (req, res) => {
       const userEmail = req.query.email;
       const rooms = await roomsCollection.find({}).toArray();
@@ -514,6 +541,41 @@ async function run() {
       const query = { _id: new ObjectId(req.query.subId) };
       const submissionInfo = await submissionsCollection.findOne(query);
       res.send(submissionInfo);
+    });
+
+    app.put("/remark-submission", async (req, res) => {
+      const remarkInfo = req.body;
+      const findSub = { _id: new ObjectId(remarkInfo?.subId) };
+      const option = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          remark: remarkInfo?.remark,
+          status: "remarked",
+        },
+      };
+
+      const confirmation = await submissionsCollection.updateOne(
+        findSub,
+        updatedDoc,
+        option
+      );
+
+      res.send(confirmation);
+    });
+
+    app.get("/get-remarked-paper", async (req, res) => {
+      const assignmentId = req.query.assifnmentId;
+      const studentEmail = req.query.studentEmail;
+      const query = {
+        $and: [
+          { assignmentId: assignmentId },
+          { submittedBy: studentEmail },
+          { status: "remarked" },
+        ],
+      };
+
+      const submission = await submissionsCollection.findOne(query);
+      res.send(submission);
     });
   } finally {
   }
