@@ -334,8 +334,29 @@ async function run() {
       res.send(confirmation);
     });
 
+    app.put("/join-class-room", async (req, res) => {
+      const membersInfo = req.body;
+      const findRoom = { classId: membersInfo?.classId };
+      const option = { upsert: true };
+      const newArray = membersInfo?.members;
+      const updatedDoc = {
+        $push: {
+          members: {
+            $each: newArray,
+          },
+        },
+      };
+
+      const confirmation = await roomsCollection.updateOne(
+        findRoom,
+        updatedDoc,
+        option
+      );
+      res.send(confirmation);
+    });
+
     app.get("/get-room-by-class", async (req, res) => {
-      const query = { classId: req.query.classId };
+      const query = { classId: req?.query?.classId };
       const room = await roomsCollection.findOne(query);
       res.send(room);
     });
