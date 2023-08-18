@@ -648,6 +648,18 @@ async function run() {
       const medias = await mediaCollection.find(query).toArray();
       res.send(medias);
     });
+
+    app.delete("/delete-record", async (req, res) => {
+      const query = { _id: new ObjectId(req.query.mediaId) };
+      const confirmation = await mediaCollection.deleteOne(query);
+      res.send(confirmation);
+    });
+
+    app.get("/get-media", async (req, res) => {
+      const query = { _id: new ObjectId(req.query.mediaId) };
+      const media = await mediaCollection.findOne(query);
+      res.send(media);
+    });
   } finally {
   }
 }
