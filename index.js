@@ -32,8 +32,6 @@ app.get("/", (req, res) => {
   res.send("hello from vclass server");
 });
 
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.8zw5jry.mongodb.net/?retryWrites=true&w=majority`;
-
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.tzinyke.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -64,6 +62,8 @@ async function run() {
       .collection("announcement");
 
     const commentsCollection = client.db("vclass_db").collection("comments");
+
+    const mediaCollection = client.db("vclass_db").collection("medias");
 
     app.post("/send-user-to-db", async (req, res) => {
       const user = req.body;
@@ -633,6 +633,20 @@ async function run() {
         option
       );
       res.send(confirmation);
+    });
+
+    app.post("/send-media-todb", async (req, res) => {
+      const mediaInfo = req.body;
+
+      const confirmation = await mediaCollection.insertOne(mediaInfo);
+
+      res.send(confirmation);
+    });
+
+    app.get("/get-class-medias", async (req, res) => {
+      const query = { classId: req.query.classId };
+      const medias = await mediaCollection.find(query).toArray();
+      res.send(medias);
     });
   } finally {
   }
