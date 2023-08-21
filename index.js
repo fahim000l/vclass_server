@@ -660,6 +660,23 @@ async function run() {
       const media = await mediaCollection.findOne(query);
       res.send(media);
     });
+
+    app.put("/edit-media", async (req, res) => {
+      const mediaInfo = req.body;
+      const findMedia = { _id: new ObjectId(req.query.mediaId) };
+      const option = { upsert: true };
+      const updatedDoc = {
+        $set: mediaInfo,
+      };
+
+      const confirmation = await mediaCollection.updateOne(
+        findMedia,
+        updatedDoc,
+        option
+      );
+
+      res.send(confirmation);
+    });
   } finally {
   }
 }
